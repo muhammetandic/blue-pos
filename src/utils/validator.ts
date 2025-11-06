@@ -1,7 +1,7 @@
-import { zValidator } from "@hono/zod-validator";
-import { ValidationTargets } from "hono";
-import { ZodType } from "zod";
-import { ApiResult } from "../types/result.type";
+import { zValidator } from '@hono/zod-validator';
+import type { ValidationTargets } from 'hono';
+import type { ZodType } from 'zod';
+import { ApiResult } from '../types/result.type';
 
 export const validator = <
   T extends ZodType,
@@ -13,7 +13,7 @@ export const validator = <
   zValidator(target, schema, (result, c) => {
     if (!result.success) {
       const formattedErrors = result.error.issues.map((issue) => ({
-        field: issue.path.join("."),
+        field: issue.path.join('.'),
         message: issue.message,
       }));
 

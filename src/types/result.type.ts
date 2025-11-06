@@ -1,4 +1,4 @@
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
@@ -11,28 +11,28 @@ export type ValidationError = {
   message: string;
 };
 
-export class ApiResult {
-  static success<T>(data: T, message?: string): ApiResponse<T> {
+export const ApiResult = {
+  success<T>(data: T, message?: string): ApiResponse<T> {
     return {
       success: true,
       message,
       data,
     };
-  }
+  },
 
-  static error(error: string, details?: ValidationError[]): ApiResponse {
+  error(error: string, details?: ValidationError[]): ApiResponse {
     return {
       success: false,
       error,
       details,
     };
-  }
+  },
 
-  static validationError(details: ValidationError[]): ApiResponse {
+  validationError(details: ValidationError[]): ApiResponse {
     return {
       success: false,
-      error: "validation error",
+      error: 'validation error',
       details,
     };
-  }
-}
+  },
+};
