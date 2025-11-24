@@ -6,6 +6,34 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  mail: text("mail").notNull().unique(),
+  password: text("password").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(strftime('%s','now') * 1000)`),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
+    sql`(strftime('%s','now') * 1000)`,
+  ),
+});
+
+export const userTokens = sqliteTable("user_tokens", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  kind: text("kind").notNull(),
+  token: text("token").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(strftime('%s','now') * 1000)`),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
+    sql`(strftime('%s','now') * 1000)`,
+  ),
+});
+
 export const tenants = sqliteTable("tenants", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
@@ -20,18 +48,6 @@ export const tenants = sqliteTable("tenants", {
     .notNull()
     .references(() => users.id),
   updatedBy: integer("updated_by").references(() => users.id),
-});
-
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  mail: text("mail").notNull().unique(),
-  password: text("password").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .default(sql`(strftime('%s','now') * 1000)`),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
-    sql`(strftime('%s','now') * 1000)`,
-  ),
 });
 
 export const tenantsUsers = sqliteTable(
