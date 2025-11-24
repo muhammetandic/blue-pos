@@ -1,10 +1,18 @@
-import { Hono } from 'hono';
+import { type Context, Hono, type Next } from 'hono';
+import { jwt } from 'hono/jwt';
 import authRoutes from './features/auth/routes';
+import denemeRoutes from './features/test/routes';
 import { ApiResult } from './types/result.type';
 
 const app = new Hono();
 
+app.use('/api/*', (c: Context, next: Next) => {
+  const jwtMiddleware = jwt({ secret: process.env.JWT_SECRET ?? 'deneme' });
+  return jwtMiddleware(c, next);
+});
+
 app.route('/auth', authRoutes);
+app.route('/api', denemeRoutes);
 
 app.get('/health', (c) =>
   c.json(

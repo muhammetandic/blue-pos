@@ -4,6 +4,7 @@ import { sendEmail } from '../../services/mail.service';
 import { ApiResult } from '../../types/result.type';
 import { createWelcomeMail } from './mails/welcome.mail';
 import type { MailAuthData } from './validators';
+import { sign } from 'hono/jwt';
 
 export async function login(c: Context) {
   const data: MailAuthData = await c.req.json();
@@ -12,7 +13,6 @@ export async function login(c: Context) {
     const user = await db.query.users.findFirst({
       where: (user, { eq }) => eq(user.mail, data.mail),
     });
-    console.log(user);
     if (!user) return c.json(ApiResult.error('user not found'), 404);
 
     const isValidPassword = await Bun.password.verify(
@@ -25,7 +25,10 @@ export async function login(c: Context) {
   } catch (error) {
     console.error(error);
   }
-  return c.json(ApiResult.error('something went wrong'), 500);
+
+  const accessToken = await generateAccessToken(data.mail, 30);
+  const refreshToken = generateRefreshToken();
+  return c.json(ApiResult.success({ accessToken, refreshToken }), 200);
 }
 
 export async function register(c: Context) {
@@ -53,4 +56,21 @@ export async function register(c: Context) {
     console.error(error);
   }
   return c.json(ApiResult.error('something went wrong'), 500);
+}
+
+async function generateAccessToken(user: string, expireInMinutes: number) {
+  const payload = {
+    sub: user,
+    exp: Math.floor(Date.now() / 1000) + 60 * expireInMinutes,
+  };
+
+  const secret = process.env.JWT_SECRET ?? 'deneme';
+  const token = await sign(payload, secret);
+  return token;
+}
+
+function generateRefreshToken() {
+  const bytes = new Uint8Array(48);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString('base64url');
 }
