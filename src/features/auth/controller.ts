@@ -1,76 +1,65 @@
 import type { Context } from 'hono';
-import { db, schema } from '../../db';
-import { sendEmail } from '../../services/mail.service';
+import mailService from '../../services/mail.service';
 import { ApiResult } from '../../types/result.type';
-import { createWelcomeMail } from './mails/welcome.mail';
-import type { MailAuthData } from './validators';
-import { sign } from 'hono/jwt';
+import tokenService from './services/token.service';
+import userService from './services/user.service';
+import type { MailAuthData, OTPAuthData } from './validators';
 
 export async function login(c: Context) {
   const data: MailAuthData = await c.req.json();
 
   try {
-    const user = await db.query.users.findFirst({
-      where: (user, { eq }) => eq(user.mail, data.mail),
-    });
-    if (!user) return c.json(ApiResult.error('user not found'), 404);
+    const result = await userService.authenticateUser(data.mail, data.password);
+    if (!result.user) return c.json(ApiResult.error(result.error), 400);
 
-    const isValidPassword = await Bun.password.verify(
-      data.password,
-      user.password,
-      'argon2id',
-    );
-    if (!isValidPassword)
-      return c.json(ApiResult.error('password is invalid'), 404);
+    if (!result.user.isMailConfirmed)
+      return c.json(ApiResult.error('user not verified'), 400);
+
+    const tokens = await tokenService.generateTokens(result.user.id);
+    return c.json(ApiResult.success(tokens), 200);
   } catch (error) {
     console.error(error);
   }
-
-  const accessToken = await generateAccessToken(data.mail, 30);
-  const refreshToken = generateRefreshToken();
-  return c.json(ApiResult.success({ accessToken, refreshToken }), 200);
 }
 
 export async function register(c: Context) {
   const data: MailAuthData = await c.req.json();
 
   try {
-    const user = await db.query.users.findFirst({
-      where: (user, { eq }) => eq(user.mail, data.mail),
-    });
+    const user = await userService.getUserByMail(data.mail);
     if (user) return c.json(ApiResult.error('user already exists'), 400);
 
-    const result = await db
-      .insert(schema.users)
-      .values({
-        mail: data.mail,
-        password: await Bun.password.hash(data.password, 'argon2id'),
-      })
-      .returning({ insertedId: schema.users.id });
+    const result = await userService.createNewTenant(data.mail, data.password);
+    if (result.error) return c.json(ApiResult.error(result.error), 400);
+    if (!result.userId) return c.json(ApiResult.error('user not created'), 400);
 
-    const { to, subject, html } = createWelcomeMail(data.mail, data.mail);
-    sendEmail(to, subject, html);
+    const otp = await tokenService.generateOTPToken(result.userId);
 
-    return c.json(ApiResult.success({ message: 'user created successfully' }));
+    mailService.sendWelcomeMail(data.mail, data.mail);
+    mailService.sendOtpMail(data.mail, otp);
+
+    return c.json(
+      ApiResult.success({ message: 'user created successfully' }),
+      200,
+    );
   } catch (error) {
     console.error(error);
   }
-  return c.json(ApiResult.error('something went wrong'), 500);
 }
 
-async function generateAccessToken(user: string, expireInMinutes: number) {
-  const payload = {
-    sub: user,
-    exp: Math.floor(Date.now() / 1000) + 60 * expireInMinutes,
-  };
+export async function verifyOTP(c: Context) {
+  const data: OTPAuthData = await c.req.json();
 
-  const secret = process.env.JWT_SECRET ?? 'deneme';
-  const token = await sign(payload, secret);
-  return token;
-}
+  try {
+    const user = await userService.getUserByMail(data.mail);
+    if (!user) return c.json(ApiResult.error('user not found'), 400);
 
-function generateRefreshToken() {
-  const bytes = new Uint8Array(48);
-  crypto.getRandomValues(bytes);
-  return Buffer.from(bytes).toString('base64url');
+    const result = await tokenService.verifyOTPToken(user.id, data.otp);
+    if (result.error) return c.json(ApiResult.error(result.error), 400);
+
+    const tokens = await tokenService.generateTokens(user.id);
+    return c.json(ApiResult.success(tokens), 200);
+  } catch (error) {
+    console.error(error);
+  }
 }

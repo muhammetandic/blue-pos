@@ -1,6 +1,4 @@
-export function createWelcomeMail(name: string, mail: string) {
-  const subject = `Welcome to Our Platform, ${name}!`;
-
+export function createWelcomeMail(mail: string, name: string) {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
       <div style="background-color: #4f46e5; padding: 20px; color: white; text-align: center;">
@@ -24,5 +22,5 @@ export function createWelcomeMail(name: string, mail: string) {
     </div>
   `;
 
-  return { to: mail, subject, html };
+  return html;
 }
