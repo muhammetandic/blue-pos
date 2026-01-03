@@ -1,19 +1,18 @@
 meta {
-  name: login
+  name: resend-otp
   type: http
-  seq: 1
+  seq: 4
 }
 
 post {
-  url: {{url}}/auth/login
+  url: {{url}}/auth/resend-otp
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "mail": "m_andic@yahoo.com",
-    "password": "123456"
+    "mail": "m_andic@yahoo.com"
   }
 }
 

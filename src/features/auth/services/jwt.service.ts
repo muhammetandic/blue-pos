@@ -1,4 +1,4 @@
-import { sign } from 'hono/jwt';
+import { sign, verify } from 'hono/jwt';
 
 class JWTService {
   public async signJWT(user: string, expireInMinutes: number) {
@@ -9,6 +9,15 @@ class JWTService {
 
     const secret = process.env.JWT_SECRET ?? 'deneme';
     return await sign(payload, secret);
+  }
+
+  public async verifyJWT(token: string) {
+    const secret = process.env.JWT_SECRET ?? 'deneme';
+    try {
+      return await verify(token, secret);
+    } catch {
+      return false;
+    }
   }
 }
 
