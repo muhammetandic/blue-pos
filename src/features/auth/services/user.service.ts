@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm/sql';
 import { db, schema } from '../../../db';
 import tenantService from './tenant.service';
 
@@ -22,6 +23,14 @@ class UserService {
       .values({ mail, password: await Bun.password.hash(password, 'argon2id') })
       .returning({ insertedId: schema.users.id });
     return result.insertedId;
+  }
+
+  public async confirmUser(userId: number) {
+    const result = await db
+      .update(schema.users)
+      .set({ isMailConfirmed: true })
+      .where(eq(schema.users.id, userId));
+    return result;
   }
 
   public async createTenantUser(tenantId: number, userId: number) {
@@ -54,6 +63,20 @@ class UserService {
     await this.createTenantUser(tenantId, userId);
 
     return { userId, error: null };
+  }
+
+  public async changePassword(userId: number, password: string) {
+    const result = await db
+      .update(schema.users)
+      .set({ password: await Bun.password.hash(password, 'argon2id') })
+      .where(eq(schema.users.id, userId));
+    return result;
+  }
+
+  public async getUserById(userId: number) {
+    return await db.query.users.findFirst({
+      where: (user, { eq }) => eq(user.id, userId),
+    });
   }
 }
 
