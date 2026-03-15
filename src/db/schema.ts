@@ -1,192 +1,147 @@
-import { sql } from 'drizzle-orm/sql';
-import {
-  integer,
-  primaryKey,
-  sqliteTable,
-  text,
-  unique,
-} from 'drizzle-orm/sqlite-core';
+import { boolean, pgTable, primaryKey, serial, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 
-export const users = sqliteTable('users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  mail: text('mail').notNull().unique(),
-  password: text('password').notNull(),
-  isMailConfirmed: integer('is_mail_confirmed', { mode: 'boolean' })
-    .notNull()
-    .default(false),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' })
-    .notNull()
-    .default(sql`(strftime('%s','now') * 1000)`),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-    sql`(strftime('%s','now') * 1000)`,
-  ),
+export const users = pgTable('users', {
+  id: serial().primaryKey(),
+  mail: varchar({ length: 64 }).notNull().unique(),
+  password: varchar({ length: 127 }).notNull(),
+  isMailConfirmed: boolean().default(false),
+  createdAt: timestamp().defaultNow(),
+  updatedAt: timestamp().defaultNow(),
 });
 
-export const userTokens = sqliteTable(
+export const userTokens = pgTable(
   'user_tokens',
   {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    userId: integer('user_id')
+    id: serial().primaryKey(),
+    userId: serial()
       .notNull()
       .references(() => users.id),
-    kind: text('kind').notNull(),
-    token: text('token').notNull(),
-    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .default(sql`(strftime('%s','now') * 1000)`),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-      sql`(strftime('%s','now') * 1000)`,
-    ),
+    kind: varchar({ length: 64 }).notNull(),
+    token: varchar({ length: 127 }).notNull(),
+    expiresAt: timestamp().notNull(),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow(),
   },
   (table) => [unique().on(table.userId, table.token)],
 );
 
-export const tenants = sqliteTable('tenants', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-  description: text('description'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' })
-    .notNull()
-    .default(sql`(strftime('%s','now') * 1000)`),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-    sql`(strftime('%s','now') * 1000)`,
-  ),
-  createdBy: integer('created_by')
+export const tenants = pgTable('tenants', {
+  id: serial().primaryKey(),
+  name: varchar({ length: 64 }).notNull(),
+  description: varchar({ length: 127 }),
+  createdAt: timestamp().defaultNow(),
+  updatedAt: timestamp().defaultNow(),
+  createdBy: serial()
     .notNull()
     .references(() => users.id),
-  updatedBy: integer('updated_by').references(() => users.id),
+  updatedBy: serial().references(() => users.id),
 });
 
-export const tenantsUsers = sqliteTable(
+export const tenantsUsers = pgTable(
   'tenants_users',
   {
-    tenantId: integer('tenant_id')
+    tenantId: serial()
       .notNull()
       .references(() => tenants.id),
-    userId: integer('user_id')
+    userId: serial()
       .notNull()
       .references(() => users.id),
-    isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .default(sql`(strftime('%s','now') * 1000)`),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-      sql`(strftime('%s','now') * 1000)`,
-    ),
-    createdBy: integer('created_by')
+    isAdmin: boolean().notNull().default(false),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow(),
+    createdBy: serial()
       .notNull()
       .references(() => users.id),
-    updatedBy: integer('updated_by').references(() => users.id),
+    updatedBy: serial().references(() => users.id),
   },
   (table) => [primaryKey({ columns: [table.tenantId, table.userId] })],
 );
 
-export const groups = sqliteTable('groups', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-  description: text('description').notNull(),
-  tenantId: integer('tenant_id')
+export const groups = pgTable('groups', {
+  id: serial().primaryKey(),
+  name: varchar({ length: 64 }).notNull(),
+  description: varchar({ length: 127 }).notNull(),
+  tenantId: serial()
     .notNull()
     .references(() => tenants.id),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' })
-    .notNull()
-    .default(sql`(strftime('%s','now') * 1000)`),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-    sql`(strftime('%s','now') * 1000)`,
-  ),
-  createdBy: integer('created_by')
+  createdAt: timestamp().defaultNow(),
+  updatedAt: timestamp().defaultNow(),
+  createdBy: serial()
     .notNull()
     .references(() => users.id),
-  updatedBy: integer('updated_by').references(() => users.id),
+  updatedBy: serial().references(() => users.id),
 });
 
-export const usersGroups = sqliteTable(
+export const usersGroups = pgTable(
   'users_groups',
   {
-    userId: integer('user_id')
+    userId: serial()
       .notNull()
       .references(() => users.id),
-    groupId: integer('group_id')
+    groupId: serial()
       .notNull()
       .references(() => groups.id),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .default(sql`(strftime('%s','now') * 1000)`),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-      sql`(strftime('%s','now') * 1000)`,
-    ),
-    createdBy: integer('created_by')
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow(),
+    createdBy: serial()
       .notNull()
       .references(() => users.id),
-    updatedBy: integer('updated_by').references(() => users.id),
+    updatedBy: serial().references(() => users.id),
   },
   (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
 );
 
-export const policies = sqliteTable('policies', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-  description: text('description').notNull(),
-  tenantıd: integer('tenant_id')
+export const policies = pgTable('policies', {
+  id: serial().primaryKey(),
+  name: varchar({ length: 64 }).notNull(),
+  description: varchar({ length: 127 }).notNull(),
+  tenantId: serial()
     .notNull()
     .references(() => tenants.id),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' })
-    .notNull()
-    .default(sql`(strftime('%s','now') * 1000)`),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-    sql`(strftime('%s','now') * 1000)`,
-  ),
-  createdBy: integer('created_by')
+  createdAt: timestamp().defaultNow(),
+  updatedAt: timestamp().defaultNow(),
+  createdBy: serial()
     .notNull()
     .references(() => users.id),
-  updatedBy: integer('updated_by').references(() => users.id),
+  updatedBy: serial().references(() => users.id),
 });
 
-export const usersPolicies = sqliteTable(
+export const usersPolicies = pgTable(
   'users_policies',
   {
-    userId: integer('user_id')
+    userId: serial()
       .notNull()
       .references(() => users.id),
-    policyId: integer('policy_id')
+    policyId: serial()
       .notNull()
       .references(() => policies.id),
-    allow: integer('allow', { mode: 'boolean' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .default(sql`(strftime('%s','now') * 1000)`),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-      sql`(strftime('%s','now') * 1000)`,
-    ),
-    createdBy: integer('created_by')
+    allow: boolean().notNull(),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow(),
+    createdBy: serial()
       .notNull()
       .references(() => users.id),
-    updatedBy: integer('updated_by').references(() => users.id),
+    updatedBy: serial().references(() => users.id),
   },
   (table) => [primaryKey({ columns: [table.userId, table.policyId] })],
 );
 
-export const groupPolicies = sqliteTable(
+export const groupPolicies = pgTable(
   'groups_policies',
   {
-    groupId: integer('group_id')
+    groupId: serial()
       .notNull()
       .references(() => groups.id),
-    policyId: integer('policy_id')
+    policyId: serial()
       .notNull()
       .references(() => policies.id),
-    allow: integer('allow', { mode: 'boolean' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .notNull()
-      .default(sql`(strftime('%s','now') * 1000)`),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).default(
-      sql`(strftime('%s','now') * 1000)`,
-    ),
-    createdBy: integer('created_by')
+    allow: boolean().notNull(),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow(),
+    createdBy: serial()
       .notNull()
       .references(() => users.id),
-    updatedBy: integer('updated_by').references(() => users.id),
+    updatedBy: serial().references(() => users.id),
   },
   (table) => [primaryKey({ columns: [table.groupId, table.policyId] })],
 );
