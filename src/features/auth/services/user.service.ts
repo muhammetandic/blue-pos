@@ -10,11 +10,7 @@ class UserService {
   }
 
   public async verifyPassword(incomingPassword: string, userPassword: string) {
-    return await Bun.password.verify(
-      incomingPassword,
-      userPassword,
-      'argon2id',
-    );
+    return await Bun.password.verify(incomingPassword, userPassword, 'argon2id');
   }
 
   public async createUser(mail: string, password: string) {
@@ -26,17 +22,14 @@ class UserService {
   }
 
   public async confirmUser(userId: number) {
-    const result = await db
-      .update(schema.users)
-      .set({ isMailConfirmed: true })
-      .where(eq(schema.users.id, userId));
+    const result = await db.update(schema.users).set({ isMailConfirmed: true }).where(eq(schema.users.id, userId));
     return result;
   }
 
   public async createTenantUser(tenantId: number, userId: number) {
     const result = await db
       .insert(schema.tenantsUsers)
-      .values({ tenantId, userId, isAdmin: true, createdBy: userId });
+      .values({ tenantId, userId, isAdmin: true, createdBy: userId, updatedBy: userId });
     return result;
   }
 

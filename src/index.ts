@@ -7,7 +7,10 @@ import { ApiResult } from './types/result.type';
 const app = new Hono();
 
 app.use('/api/*', (c: Context, next: Next) => {
-  const jwtMiddleware = jwt({ secret: process.env.JWT_SECRET ?? 'deneme' });
+  const jwtMiddleware = jwt({
+    secret: process.env.JWT_SECRET ?? 'deneme',
+    alg: 'HS256',
+  });
   return jwtMiddleware(c, next);
 });
 
