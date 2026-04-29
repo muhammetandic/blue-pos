@@ -14,4 +14,11 @@ denemeRoutes.get('/test', (ctx: Context) => {
   return ctx.json(deneme);
 });
 
+denemeRoutes.post('/test', (ctx: Context) => {
+  const deneme = {
+    result: 'successfull',
+  };
+  return ctx.json(deneme);
+});
+
 export default denemeRoutes;
