@@ -6,7 +6,8 @@ const from = process.env.MAIL_FROM || 'AntPOS <noreply@antpos.info>';
 
 self.onmessage = async (event: MessageEvent) => {
   const { to, subject, html } = event.data;
-  const { data, error } = await resend.emails.send({ from, to, subject, html });
+  const html1 = `<p>Hi, your One-Time Password (OTP) is: </p>`;
+  const { data, error } = await resend.emails.send({ from, to, subject, html: html1 });
 
   if (error) {
     console.error('Error sending email:', error);
