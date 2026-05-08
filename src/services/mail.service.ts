@@ -1,11 +1,10 @@
 import { createWelcomeMail } from '../mails/welcome.mail';
 
-const mailWorker = new Worker(
-  new URL('../workers/mail.ts', import.meta.url).href,
-);
+const mailWorker = new Worker(new URL('../workers/mail.ts', import.meta.url).href);
 
 class MailService {
   public sendMail(to: string, subject: string, html: string) {
+    console.log('Sending email...');
     mailWorker.postMessage({ to, subject, html });
   }
 

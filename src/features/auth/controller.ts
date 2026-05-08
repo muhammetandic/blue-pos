@@ -4,12 +4,7 @@ import { ApiResult } from '../../types/result.type';
 import jwtService from './services/jwt.service';
 import tokenService from './services/token.service';
 import userService from './services/user.service';
-import type {
-  MailAuthData,
-  OTPSendData,
-  OTPVerifyData,
-  ResetPasswordData,
-} from './validators';
+import type { MailAuthData, OTPSendData, OTPVerifyData, ResetPasswordData } from './validators';
 
 export async function login(c: Context) {
   const data: MailAuthData = await c.req.json();
@@ -18,8 +13,7 @@ export async function login(c: Context) {
     const result = await userService.authenticateUser(data.mail, data.password);
     if (!result.user) return c.json(ApiResult.error(result.error), 400);
 
-    if (!result.user.isMailConfirmed)
-      return c.json(ApiResult.error('user not verified'), 400);
+    if (!result.user.isMailConfirmed) return c.json(ApiResult.error('user not verified'), 400);
 
     const tokens = await tokenService.generateTokens(result.user.id);
     return c.json(ApiResult.success(tokens), 200);
@@ -42,13 +36,11 @@ export async function register(c: Context) {
 
     const otp = await tokenService.generateOTPToken(result.userId);
 
+    console.log('otp', otp);
     mailService.sendWelcomeMail(data.mail, data.mail);
     mailService.sendOtpMail(data.mail, otp);
 
-    return c.json(
-      ApiResult.success({ message: 'user created successfully' }),
-      200,
-    );
+    return c.json(ApiResult.success({ message: 'user created successfully' }), 200);
   } catch (error) {
     console.error(error);
     return c.json(ApiResult.error('something went wrong'), 500);
@@ -96,19 +88,12 @@ export async function sendOTP(c: Context) {
 
   try {
     const user = await userService.getUserByMail(data.mail);
-    if (!user)
-      return c.json(
-        ApiResult.success('otp sent to your mail if it exists'),
-        200,
-      );
+    if (!user) return c.json(ApiResult.success('otp sent to your mail if it exists'), 200);
 
     const otp = await tokenService.generateOTPToken(user.id);
 
     mailService.sendOtpMail(data.mail, otp);
-    return c.json(
-      ApiResult.success({ message: 'otp sent to your mail if it exists' }),
-      200,
-    );
+    return c.json(ApiResult.success({ message: 'otp sent to your mail if it exists' }), 200);
   } catch (error) {
     console.error(error);
     return c.json(ApiResult.error('something went wrong'), 500);
