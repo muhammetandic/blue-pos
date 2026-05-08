@@ -1,11 +1,19 @@
+import { Resend } from 'resend';
 import { createWelcomeMail } from '../mails/welcome.mail';
 
-const mailWorker = new Worker(new URL('../workers/mail.ts', import.meta.url).href);
+const resend = new Resend(process.env.RESEND_API_KEY);
+const from = process.env.MAIL_FROM || 'AntPOS <noreply@antpos.info>';
 
 class MailService {
   public sendMail(to: string, subject: string, html: string) {
-    console.log('Sending email...');
-    mailWorker.postMessage({ to, subject, html });
+    resend.emails.send({ from, to, subject, html }).then(({ data, error }) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        return;
+      }
+      console.log('Successfully sent email!');
+      console.log('email id:', data.id);
+    }).catch(console.error);
   }
 
   public sendWelcomeMail(to: string, name: string) {
