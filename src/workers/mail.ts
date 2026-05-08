@@ -6,9 +6,13 @@ const from = process.env.MAIL_FROM || 'AntPOS <noreply@antpos.info>';
 
 self.onmessage = async (event: MessageEvent) => {
   const { to, subject, html } = event.data;
-  try {
-    await resend.emails.send({ from, to, subject, html });
-  } catch (error) {
-    console.error(error);
+  const { data, error } = await resend.emails.send({ from, to, subject, html });
+
+  if (error) {
+    console.error('Error sending email:', error);
+    process.exit(1);
   }
+
+  console.log('Successfully sent email!');
+  console.log('email id:', data.id);
 };
