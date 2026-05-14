@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { createOtpMail } from '../mails/otp.mail';
 import { createWelcomeMail } from '../mails/welcome.mail';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -24,7 +25,7 @@ class MailService {
 
   public sendOtpMail(to: string, otp: string) {
     const subject = 'Your One-Time Password (OTP)';
-    const html = `<p>Hi, your One-Time Password (OTP) is: ${otp}</p>`;
+    const html = createOtpMail(to, otp);
     this.sendMail(to, subject, html);
   }
 }
